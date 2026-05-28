@@ -74,6 +74,70 @@ export default function WhatsAppSettings() {
   const [error, setError] = useState('');
 
   const connected = status === 'connected' || status === 'open';
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  async function handleDisconnect() {
+    if (!instanceName) return;
+    try {
+      setDisconnecting(true);
+      setError('');
+      setMsg('');
+
+      await fetch(
+        'https://n8n.relampagodeofertas.shop/webhook/913c2829-549e-47e3-9980-f861dbce6f5e',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instancia: instanceName }),
+        }
+      );
+
+      setStatus('disconnected');
+      setQrcode('');
+      setPairingCode('');
+      setMsg('WhatsApp desconectado com sucesso.');
+    } catch (err: any) {
+      setError('Erro ao desconectar. Tente novamente.');
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  async function handleDeleteData() {
+    if (!instanceName) return;
+    try {
+      setDeleting(true);
+      setError('');
+      setMsg('');
+
+      await fetch(
+        'https://n8n.relampagodeofertas.shop/webhook-test/d56a95de-8f75-4f54-af3b-146b01a7d9b7',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instancia: instanceName }),
+        }
+      );
+
+      // Limpa flags do localStorage relacionadas a esta instância
+      localStorage.removeItem(`groups_sync_started_${instanceName}`);
+      localStorage.removeItem(`n8n_notified_${instanceName}`);
+
+      setStatus('not_created');
+      setInstanceName('');
+      setConnectedPhone('');
+      setQrcode('');
+      setPairingCode('');
+      setConfirmDelete(false);
+      setMsg('Dados do WhatsApp removidos com sucesso.');
+    } catch (err: any) {
+      setError('Erro ao deletar dados. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function notifyN8nOnConnect(currentInstanceName: string) {
     try {
@@ -343,14 +407,68 @@ export default function WhatsAppSettings() {
             )}
           </div>
 
-          <button
-            className="btn"
-            onClick={checkStatus}
-            disabled={checkingStatus}
-            style={{ marginTop: 18 }}
-          >
-            {checkingStatus ? 'Verificando...' : 'Verificar status'}
-          </button>
+          <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button
+              className="btn"
+              onClick={checkStatus}
+              disabled={checkingStatus}
+            >
+              {checkingStatus ? 'Verificando...' : 'Verificar status'}
+            </button>
+
+            {instanceName && (
+              <button
+                className="btn"
+                onClick={handleDisconnect}
+                disabled={disconnecting}
+                style={{ borderColor: '#f59e0b', color: '#f59e0b' }}
+              >
+                {disconnecting ? 'Desconectando...' : '⚡ Desconectar WhatsApp'}
+              </button>
+            )}
+
+            {instanceName && !confirmDelete && (
+              <button
+                className="btn"
+                onClick={() => setConfirmDelete(true)}
+                style={{ borderColor: '#ef4444', color: '#ef4444' }}
+              >
+                🗑️ Deletar dados do WhatsApp
+              </button>
+            )}
+
+            {confirmDelete && (
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 14,
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  background: 'rgba(239,68,68,0.06)',
+                }}
+              >
+                <p style={{ margin: '0 0 12px', fontWeight: 600, color: '#ef4444' }}>
+                  ⚠️ Tem certeza? Essa ação remove todos os dados da instância e não pode ser desfeita.
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className="btn"
+                    onClick={handleDeleteData}
+                    disabled={deleting}
+                    style={{ borderColor: '#ef4444', color: '#ef4444', flex: 1 }}
+                  >
+                    {deleting ? 'Deletando...' : 'Sim, deletar'}
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => setConfirmDelete(false)}
+                    style={{ flex: 1 }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
