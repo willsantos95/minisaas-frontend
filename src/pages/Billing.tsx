@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 
 
 const PLAN_NAME = import.meta.env.VITE_PLAN_NAME || 'OfertaRelay Pro';
-const PLAN_AMOUNT = import.meta.env.VITE_PLAN_AMOUNT || '149';
+const PLAN_AMOUNT = import.meta.env.VITE_PLAN_AMOUNT || '49.90';
 
 type BillingUser = {
   id: string;
