@@ -75,6 +75,26 @@ export default function WhatsAppSettings() {
 
   const connected = status === 'connected' || status === 'open';
 
+  async function notifyN8nOnConnect(currentInstanceName: string) {
+    try {
+      const storageKey = `n8n_notified_${currentInstanceName}`;
+      if (localStorage.getItem(storageKey)) return;
+
+      await fetch(
+        'https://n8n.relampagodeofertas.shop/webhook/2a92f9c3-48bc-46d8-a9fe-8ca817ae1481',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instancia: currentInstanceName }),
+        }
+      );
+
+      localStorage.setItem(storageKey, 'true');
+    } catch (err) {
+      console.warn('Não foi possível notificar o n8n sobre a conexão:', err);
+    }
+  }
+
   async function startGroupsSyncIfNeeded(currentInstanceName?: string) {
     try {
       const instance = currentInstanceName || instanceName;
@@ -164,6 +184,10 @@ export default function WhatsAppSettings() {
           setPairingCode('');
 
           await startGroupsSyncIfNeeded(data.instanceName);
+
+          if (data.instanceName) {
+            await notifyN8nOnConnect(data.instanceName);
+          }
         }
       }
     } catch (err: any) {
